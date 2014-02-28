@@ -11,6 +11,6 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:adjustViewBounds="true"
-        android:src="@drawable/staticmap" />
+        android:src="@drawable/loading_map" />
 
 </RelativeLayout>

@@ -21,11 +21,16 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.View;
@@ -38,6 +43,7 @@ public class MainActivity extends Activity {
 	Map<String, String> busRoutesByName = new HashMap<String, String>();
 	
 	private AudioManager mAudioManager;
+	ImageView iv ;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,21 +63,32 @@ public class MainActivity extends Activity {
         setContentView(card1View);
         
         setup();
-        parseFunction(spokenText);
+        parseFunction(spokenText.toLowerCase());
     }
 
     public void setup()
     {
     	//Bus routes with ID
     	busRoutesByID.put("Express Route", "7");
+    	busRoutesByID.put("Express", "7");
     	busRoutesByID.put("Hospital/Chapin Route", "3");
+    	busRoutesByID.put("Hospital", "3");
+    	busRoutesByID.put("Chapin", "3");
     	busRoutesByID.put("Inner Loop", "5");
     	busRoutesByID.put("Outer Loop", "4");
     	busRoutesByID.put("R&D Park Shuttle", "1");
+    	busRoutesByID.put("R&D Shuttle", "1");
+    	busRoutesByID.put("R&D Park", "1");
+    	busRoutesByID.put("R and D Park Shuttle", "1");
+    	busRoutesByID.put("R and D Shuttle", "1");
     	busRoutesByID.put("Railroad Route", "6");
+    	busRoutesByID.put("Railroad", "6");
     	busRoutesByID.put("Southampton Shuttle", "8");
+    	busRoutesByID.put("Southampton", "8");
     	busRoutesByID.put("Shopping Route East - Sundays", "2");
-    	busRoutesByID.put("Shopping Route West - Sundays", "13");   	
+    	busRoutesByID.put("Shopping Route East", "2");
+    	busRoutesByID.put("Shopping Route West - Sundays", "13"); 
+    	busRoutesByID.put("Shopping Route West", "13"); 
     	//busRoutesByID.put("Railroad Route 1", "11");
     	//busRoutesByID.put("Railroad Route 2", "12");
     	
@@ -103,13 +120,15 @@ public class MainActivity extends Activity {
     public void parseRoute(String spokenText, String additional)
     {
     	for (Map.Entry<String, String> entry : busRoutesByID.entrySet()) {
-    	    String key = entry.getKey();
+    	    String key = entry.getKey().toLowerCase();
     	    String value = entry.getValue();
     	    
     	    System.out.println("[Testing] - Found key \"" + key + "\" and value \"" + value + "\" for spoken text " + spokenText);
     	    
-    	    if(spokenText.indexOf(key.toLowerCase()) > -1)
+    	    if(spokenText.indexOf(key) > -1)
     	    {
+    	    	System.out.println("Found a match, " + key);
+    	    	
     	    	card1.setText("Found route '" + value + "'");
     	    	View card1View = card1.toView();
                 setContentView(card1View);
@@ -177,6 +196,14 @@ public class MainActivity extends Activity {
 		    public void onSuccess(String response) {
 		        
 		        System.out.println(response);
+		        
+		        if(response == "[]")
+		        {
+		        	System.out.println("Response is null");
+		        	showNoBus();
+		        	return ;
+		        }
+		        
 		        JSONArray routeResult = null;
 				try {
 					routeResult = new JSONArray(response);
@@ -201,25 +228,70 @@ public class MainActivity extends Activity {
 					e.printStackTrace();
 				}
 		        
-		        String mapURL = getMapUrl(Double.parseDouble(lat), Double.parseDouble(lon), 640, 360);
-		        
+		        //String mapURL = getMapUrl(Double.parseDouble(lat), Double.parseDouble(lon), 640, 360);
+				String mapURL = null;
+				try {
+					mapURL = getMapUrl(routeResult, 640, 360);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		        
 		        System.out.println("Map URL: " + mapURL);
 		        
 		        card1.setText("Bus");
 		        card1.setImageLayout(Card.ImageLayout.FULL);
-		        card1.addImage(Uri.parse("android.resource://com.ctthosting.sbutransit/raw/staticmap"));
+		        card1.addImage(Uri.parse("android.resource://com.ctthosting.sbutransit/raw/loading_map"));
 			    View card1View = card1.toView();
 		        //setContentView(card1View);
 			    
-			    Drawable mapImg = LoadImageFromWebOperations(mapURL);
+			    iv = (ImageView) findViewById(R.id.imageView1);
 			    
-			    ImageView img = (ImageView) findViewById(R.id.imageView1);
-			    //img.setImageDrawable();
+			    System.out.println("[Testing] - Starting image map requerst");
+			    new DownloadImageTask(iv).execute(mapURL);
+			    
 			    setContentView(R.layout.activity_main);
 		    }
 		});
     }
+    
+    class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            // TODO Auto-generated method stub
+            super.onPreExecute();
+            //pd.show();
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+              InputStream in = new java.net.URL(urldisplay).openStream();
+              mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        @Override 
+        protected void onPostExecute(Bitmap result) {
+            super.onPostExecute(result);
+            ImageView theView = (ImageView) findViewById(R.id.imageView1);
+            theView.setImageBitmap(result);
+            
+            //pd.dismiss();
+            //bmImage.setImageBitmap(result);
+        }
+      }
     
     public static String getMapUrl(double latitude, double longitude, double currentLat, double currentLon, int width, int height) {
         try {
@@ -235,10 +307,29 @@ public class MainActivity extends Activity {
     }
     
     public static String getMapUrl(double latitude, double longitude, int width, int height) {
+    	
+    	
         String raw = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=" + width + "x" + height +
 		    "&style=feature:all|element:all|saturation:-100|lightness:-25|gamma:0.5|visibility:simplified" +
 		    "&style=feature:roads|element:geometry&style=feature:landscape|element:geometry|lightness:-25" +
 		    "&markers=color:0xF7594A|" + latitude + "," + longitude + "&zoom=17";
+		return raw.replace("|", "%7C");
+    }
+    
+    public static String getMapUrl(JSONArray buses, int width, int height) throws JSONException {
+    	String raw = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=" + width + "x" + height +
+    		    "&style=feature:all|element:all|saturation:-100|lightness:-25|gamma:0.5|visibility:simplified" +
+    		    "&style=feature:roads|element:geometry&style=feature:landscape|element:geometry|lightness:-25";
+    	
+    	if(buses.length() == 1)
+    		raw = raw + "&zoom=17";
+    	
+    	for (int i = 0; i < buses.length(); i++) {
+    			JSONObject bus = buses.getJSONObject(i);
+    			raw = raw + "&markers=color:0x" + bus.getString("color").replace("#", "") + "|" + bus.getString("lat") + "," + bus.getString("lon");
+    			
+    		}
+  
 		return raw.replace("|", "%7C");
     }
     
@@ -252,6 +343,12 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void showNoBus()
+    {
+    	card1.setText("Sorry, no buses are running on that route now.");
+	    View card1View = card1.toView();
+        //setContentView(card1View);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
