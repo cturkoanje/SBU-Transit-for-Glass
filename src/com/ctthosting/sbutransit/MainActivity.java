@@ -2,6 +2,7 @@ package com.ctthosting.sbutransit;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.android.glass.app.Card;
+import com.google.android.glass.app.Card.ImageLayout;
 import com.google.android.glass.media.Sounds;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -30,6 +32,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
@@ -44,6 +47,7 @@ public class MainActivity extends Activity {
 	
 	private AudioManager mAudioManager;
 	ImageView iv ;
+	private TextToSpeech mSpeech;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +56,7 @@ public class MainActivity extends Activity {
         
         ArrayList<String> voiceResults = getIntent().getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 		String spokenText = voiceResults.get(0);
-		
+	
 		if(spokenText == "" || spokenText == null)
 			spokenText = "none";
 		
@@ -106,6 +110,13 @@ public class MainActivity extends Activity {
     	busRoutesByName.put("Shopping Route West", "Shopping Route West - Sundays");   	
     	//busRoutesByName.put("", "Railroad Route 1");
     	//busRoutesByName.put("", "Railroad Route 2");
+    	
+    	mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                // Do nothing.
+            }
+        });
     	
     }
     
@@ -197,12 +208,6 @@ public class MainActivity extends Activity {
 		        
 		        System.out.println(response);
 		        
-		        if(response == "[]")
-		        {
-		        	System.out.println("Response is null");
-		        	showNoBus();
-		        	return ;
-		        }
 		        
 		        JSONArray routeResult = null;
 				try {
@@ -211,6 +216,17 @@ public class MainActivity extends Activity {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+				
+				if(routeResult.length() == 0)
+		        {
+		        	System.out.println("Response is null");
+		        	showNoBus();
+		        	return ;
+		        }
+				
+				
+				
 				JSONObject bus1 = null;
 		        try {
 					bus1 = routeResult.getJSONObject(0);
@@ -288,6 +304,8 @@ public class MainActivity extends Activity {
             ImageView theView = (ImageView) findViewById(R.id.imageView1);
             theView.setImageBitmap(result);
             
+            mSpeech.speak("Here is a map of the buses.", TextToSpeech.QUEUE_FLUSH, null);
+            
             //pd.dismiss();
             //bmImage.setImageBitmap(result);
         }
@@ -346,8 +364,11 @@ public class MainActivity extends Activity {
     public void showNoBus()
     {
     	card1.setText("Sorry, no buses are running on that route now.");
+    	card1.setImageLayout(ImageLayout.FULL);
+    	card1.addImage(R.drawable.blank_sbu_map);
 	    View card1View = card1.toView();
-        //setContentView(card1View);
+	    setContentView(card1View);
+	    mSpeech.speak("Sorry, no buses are running on that route now.", TextToSpeech.QUEUE_FLUSH, null);
     }
 
     @Override
