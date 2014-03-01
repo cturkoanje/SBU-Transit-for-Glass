@@ -58,7 +58,10 @@ public class MainActivity extends Activity {
 		String spokenText = voiceResults.get(0);
 	
 		if(spokenText == "" || spokenText == null)
+		{
+			finish();
 			spokenText = "none";
+		}
 		
         card1 = new Card(this);
         card1.setText("Sorry, we could not register that command. Try again.");
