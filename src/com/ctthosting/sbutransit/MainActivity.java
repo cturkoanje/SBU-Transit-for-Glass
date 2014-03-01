@@ -363,6 +363,7 @@ public class MainActivity extends Activity {
 
     public void showNoBus()
     {
+    	card1 = new Card(this);
     	card1.setText("Sorry, no buses are running on that route now.");
     	card1.setImageLayout(ImageLayout.FULL);
     	card1.addImage(R.drawable.blank_sbu_map);
