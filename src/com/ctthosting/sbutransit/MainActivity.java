@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
 	    View card1View = card1.toView();
         setContentView(card1View);
         
-    	String requestURL = "http://local.h.cttapp.com/sbu/list_buses/?id=" + routeNumber;
+    	String requestURL = "http://h.cttapp.com/sbu/list_buses/?id=" + routeNumber;
     	System.out.println("URL: ");
     	System.out.println(requestURL);
     	
